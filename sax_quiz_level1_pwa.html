@@ -419,6 +419,19 @@
     transition: opacity 0.2s;
   }
   .modal-close-btn:hover { opacity: 0.85; }
+
+  /* ---- クイズ中操作バー ---- */
+  .quiz-ctrl-bar {
+    width: 100%;
+    max-width: 960px;
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .quiz-ctrl-bar .ctrl-btn {
+    flex: 1;
+  }
 </style>
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -498,7 +511,7 @@
     <div id="feedback-text"></div>
 
     <!-- コントロール -->
-    <div class="ctrl-btns">
+    <div class="ctrl-btns" id="ctrl-btns">
       <button class="ctrl-btn btn-start" id="btn-start" onclick="startQuiz()">▶ START</button>
       <button class="ctrl-btn btn-skip"  id="btn-skip"  onclick="skipNote()" disabled>⏭ 中断</button>
       <button class="ctrl-btn btn-stop"  id="btn-stop"  onclick="stopQuiz()" disabled>⏹ STOP</button>
@@ -507,9 +520,23 @@
 </div>
 
 <!-- 回答ボタン -->
-<div class="answer-section">
-  <h2>音名を選んでください</h2>
+<div class="answer-section" id="answer-section">
+  <h2 id="answer-heading">音名を選んでください</h2>
   <div class="note-grid" id="note-grid"></div>
+</div>
+
+<!-- クイズ中専用：操作ボタン（音名ボタンの下） -->
+<div class="quiz-ctrl-bar" id="quiz-ctrl-bar" style="display:none;">
+  <button class="ctrl-btn btn-skip" id="btn-skip2" onclick="skipNote()">⏭ 中断</button>
+  <button class="ctrl-btn btn-stop" id="btn-stop2" onclick="stopQuiz()">⏹ STOP</button>
+</div>
+
+<!-- タイマーポップアップ -->
+<div class="timer-popup" id="timer-popup" style="display:none;">
+  <div class="timer-popup-inner">
+    <div class="timer-popup-label">残り時間</div>
+    <div class="timer-popup-num" id="timer-popup-num">5</div>
+  </div>
 </div>
 
 <!-- 結果モーダル -->
@@ -746,9 +773,25 @@ function setFeedback(text, color='') {
 }
 
 function setCountdown(sec) {
+  // 既存のtimer-box表示（非表示中でも値は更新）
   const el = document.getElementById('countdown-display');
   el.textContent = sec === null ? '—' : String(sec);
   el.classList.toggle('urgent', sec !== null && sec <= 2);
+
+  // タイマーポップアップ
+  const popup = document.getElementById('timer-popup');
+  const popNum = document.getElementById('timer-popup-num');
+  if (!state.running || sec === null || typeof sec !== 'number') {
+    popup.style.display = 'none';
+    return;
+  }
+  popNum.textContent = String(sec);
+  popNum.classList.toggle('urgent', sec <= 2);
+  popup.style.display = 'flex';
+}
+
+function hideTimerPopup() {
+  document.getElementById('timer-popup').style.display = 'none';
 }
 
 function setPanelState(state_) {
@@ -801,9 +844,12 @@ function startQuiz() {
   updateProgress();
   setFeedback('');
 
-  // クイズ中は設定・進捗を非表示
-  document.getElementById('config-box').style.display = 'none';
-  document.getElementById('stats-box').style.display  = 'none';
+  // クイズ中は設定・進捗・通常操作ボタンを非表示
+  document.getElementById('config-box').style.display   = 'none';
+  document.getElementById('stats-box').style.display    = 'none';
+  document.getElementById('ctrl-btns').style.display    = 'none';
+  document.getElementById('quiz-ctrl-bar').style.display = 'flex';
+  document.getElementById('answer-heading').style.display = 'none';
 
   nextNote();
 }
@@ -833,6 +879,7 @@ function onAnswer(chosenKey) {
   if (!state.running || state.answered) return;
   state.answered = true;
   clearTimers();
+  hideTimerPopup();
   setAllBtns(false);
 
   const correct = state.currentNote;
@@ -910,9 +957,12 @@ function onFinished(stopped=false) {
   setCountdown(null);
   document.getElementById('question-label').textContent = stopped ? '停止' : '完了';
 
-  // 設定・進捗を再表示
-  document.getElementById('config-box').style.display = '';
-  document.getElementById('stats-box').style.display  = '';
+  // 設定・進捗・通常操作ボタンを再表示
+  document.getElementById('config-box').style.display   = '';
+  document.getElementById('stats-box').style.display    = '';
+  document.getElementById('ctrl-btns').style.display    = '';
+  document.getElementById('quiz-ctrl-bar').style.display = 'none';
+  document.getElementById('answer-heading').style.display = '';
 
   if (!stopped && state.totalCount > 0) {
     showModal();
