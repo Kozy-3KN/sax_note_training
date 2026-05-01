@@ -1,0 +1,951 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>🎷 SaxQuiz Lv.1</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;700;900&family=Bebas+Neue&display=swap');
+
+  :root {
+    --bg: #0d1117;
+    --panel: #161b22;
+    --panel2: #1c2130;
+    --border: #30363d;
+    --accent: #f0a500;
+    --accent2: #3a86ff;
+    --green: #2ec27e;
+    --red: #e05252;
+    --text: #e6edf3;
+    --muted: #8b949e;
+    --nat: #3a86ff;
+    --radius: 10px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Noto Sans JP', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 16px;
+    padding-top: calc(16px + env(safe-area-inset-top));
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    background-image: radial-gradient(ellipse at 20% 20%, #1a2340 0%, transparent 60%),
+                      radial-gradient(ellipse at 80% 80%, #1a1a2e 0%, transparent 60%);
+  }
+
+  header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 2px;
+    color: var(--accent);
+    text-shadow: 0 0 20px rgba(240,165,0,0.3);
+  }
+  .lv-badge {
+    background: var(--accent);
+    color: #000;
+    font-weight: 900;
+    font-size: 0.75rem;
+    padding: 3px 8px;
+    border-radius: 20px;
+    letter-spacing: 1px;
+  }
+
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: 16px;
+    width: 100%;
+    max-width: 960px;
+  }
+
+  @media (max-width: 680px) {
+    body { padding: 10px; }
+
+    header h1 { font-size: 1.4rem; }
+
+    .main-grid {
+      grid-template-columns: 1fr;
+    }
+
+    /* モバイルでは右パネルを横並びにコンパクト表示 */
+    .right-panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+
+    .config-box { grid-column: 1 / -1; }
+
+    .ctrl-btns {
+      grid-column: 1 / -1;
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+    }
+
+    #feedback-text { grid-column: 1 / -1; text-align: center; }
+
+    #staff-svg { height: 180px; }
+
+    .score-panel { min-height: 200px; padding: 12px; }
+
+    /* 回答ボタンをタップしやすく */
+    .note-btn {
+      width: auto;
+      flex: 1 1 calc(33% - 8px);
+      height: 52px;
+      font-size: 1rem;
+      border-radius: 10px;
+    }
+
+    .note-grid { gap: 6px; }
+
+    #countdown-display { font-size: 1.8rem; }
+
+    .config-row input[type=number] { width: 54px; }
+
+    .answer-section { padding: 12px; margin-top: 10px; }
+    .answer-section h2 { margin-bottom: 8px; }
+  }
+
+  /* ---- 楽譜パネル ---- */
+  .score-panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    min-height: 280px;
+    position: relative;
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .score-panel.ok {
+    border-color: var(--green);
+    box-shadow: 0 0 24px rgba(46,194,126,0.25);
+  }
+  .score-panel.ng {
+    border-color: var(--red);
+    box-shadow: 0 0 24px rgba(224,82,82,0.25);
+  }
+
+  #staff-svg {
+    width: 100%;
+    max-width: 440px;
+    height: 220px;
+  }
+
+  .question-label {
+    font-size: 0.85rem;
+    color: var(--muted);
+    margin-top: 8px;
+    letter-spacing: 1px;
+  }
+
+  /* ---- 右パネル ---- */
+  .right-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .config-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+  .config-box h2 {
+    font-size: 0.8rem;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+
+  .config-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    gap: 8px;
+  }
+  .config-row label {
+    font-size: 0.9rem;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .config-row .input-group {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+  .config-row input[type=number] {
+    width: 64px;
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    text-align: center;
+    padding: 4px;
+    font-size: 1rem;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 1px;
+  }
+  .config-row span.unit {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+
+  /* ---- 進捗 ---- */
+  .stats-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .progress-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: var(--muted);
+  }
+  .progress-bar-outer {
+    background: var(--bg);
+    border-radius: 999px;
+    height: 6px;
+    overflow: hidden;
+  }
+  .progress-bar-inner {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent2), var(--accent));
+    border-radius: 999px;
+    transition: width 0.4s ease;
+    width: 0%;
+  }
+  .score-row {
+    display: flex;
+    justify-content: space-around;
+    text-align: center;
+  }
+  .score-item span:first-child {
+    display: block;
+    font-size: 1.6rem;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 1px;
+  }
+  .score-item span:last-child {
+    font-size: 0.75rem;
+    color: var(--muted);
+  }
+  .ok-score { color: var(--green); }
+  .ng-score { color: var(--red); }
+
+  /* ---- タイマー ---- */
+  .timer-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .timer-label {
+    font-size: 0.8rem;
+    color: var(--muted);
+  }
+  #countdown-display {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2.4rem;
+    color: var(--accent);
+    letter-spacing: 2px;
+    min-width: 50px;
+    text-align: right;
+    transition: color 0.3s;
+  }
+  #countdown-display.urgent {
+    color: var(--red);
+    animation: pulse 0.5s ease-in-out infinite alternate;
+  }
+  @keyframes pulse { from { opacity: 1; } to { opacity: 0.5; } }
+
+  #feedback-text {
+    font-size: 1rem;
+    font-weight: 700;
+    text-align: center;
+    min-height: 1.2em;
+  }
+
+  /* ---- コントロールボタン ---- */
+  .ctrl-btns {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  .ctrl-btn {
+    padding: 14px 12px;
+    border: none;
+    border-radius: var(--radius);
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .ctrl-btn:active:not(:disabled) { transform: scale(0.97); }
+  .ctrl-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn-start { background: var(--green); color: #fff; }
+  .btn-skip  { background: var(--accent); color: #000; }
+  .btn-stop  { background: var(--red);   color: #fff; }
+
+  /* ---- 回答ボタングリッド ---- */
+  .answer-section {
+    width: 100%;
+    max-width: 960px;
+    margin-top: 16px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    padding-top: calc(16px + env(safe-area-inset-top));
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+  .answer-section h2 {
+    font-size: 0.8rem;
+    color: var(--muted);
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 12px;
+  }
+  .note-grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+  }
+  .note-btn {
+    width: 62px;
+    height: 48px;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Noto Sans JP', sans-serif;
+    font-size: 0.82rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s, background 0.15s;
+    background: var(--nat);
+    color: #fff;
+  }
+  .note-btn:hover:not(:disabled) { opacity: 0.85; transform: translateY(-2px); }
+  .note-btn:active:not(:disabled) { transform: scale(0.94); }
+  .note-btn:disabled { opacity: 0.25; cursor: not-allowed; }
+  .note-btn.correct  { background: var(--green) !important; opacity: 1 !important; }
+  .note-btn.wrong    { background: var(--red)   !important; opacity: 1 !important; }
+
+  /* ---- 結果モーダル ---- */
+  .modal-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 36px 40px;
+    text-align: center;
+    max-width: 340px;
+    width: 90%;
+    animation: modalIn 0.3s ease;
+  }
+  @keyframes modalIn { from { opacity:0; transform: scale(0.9) translateY(20px); } to { opacity:1; transform: scale(1) translateY(0); } }
+  .modal h2 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    color: var(--accent);
+    letter-spacing: 3px;
+    margin-bottom: 20px;
+  }
+  .modal-stat {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 0.95rem;
+  }
+  .modal-stat:last-of-type { border-bottom: none; }
+  .modal-val { font-weight: 700; font-family: 'Bebas Neue', sans-serif; font-size: 1.1rem; letter-spacing: 1px; }
+  .rate-display {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 3.5rem;
+    color: var(--accent);
+    letter-spacing: 3px;
+    margin: 16px 0;
+    text-shadow: 0 0 20px rgba(240,165,0,0.4);
+  }
+  .modal-close-btn {
+    margin-top: 20px;
+    padding: 12px 36px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.1rem;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: opacity 0.2s;
+  }
+  .modal-close-btn:hover { opacity: 0.85; }
+</style>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="SaxQuiz">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#f0a500">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="apple-touch-startup-image" href="icon-512.png">
+</head>
+<body>
+
+<header>
+  <h1>🎷 Alto Sax 音符クイズ</h1>
+  <span class="lv-badge">LV.1 ♮ナチュラルのみ</span>
+</header>
+
+<div class="main-grid">
+  <!-- 楽譜表示 -->
+  <div class="score-panel" id="score-panel">
+    <svg id="staff-svg" viewBox="0 0 440 220" xmlns="http://www.w3.org/2000/svg">
+      <text x="220" y="120" text-anchor="middle" fill="#8b949e" font-family="Noto Sans JP" font-size="18">
+        START を押してください
+      </text>
+    </svg>
+    <div class="question-label" id="question-label">—</div>
+  </div>
+
+  <!-- 右パネル -->
+  <div class="right-panel">
+    <!-- 設定 -->
+    <div class="config-box">
+      <h2>設定</h2>
+      <div class="config-row">
+        <label>出題回数</label>
+        <div class="input-group">
+          <input type="number" id="count-input" value="10" min="1" max="100">
+          <span class="unit">回</span>
+        </div>
+      </div>
+      <div class="config-row">
+        <label>時間制限</label>
+        <div class="input-group">
+          <input type="number" id="time-input" value="5" min="1" max="30">
+          <span class="unit">秒</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- 進捗・スコア -->
+    <div class="stats-box">
+      <div class="progress-row">
+        <span id="progress-text">0 / 0</span>
+        <span id="progress-pct">0%</span>
+      </div>
+      <div class="progress-bar-outer">
+        <div class="progress-bar-inner" id="progress-bar"></div>
+      </div>
+      <div class="score-row">
+        <div class="score-item">
+          <span class="ok-score" id="ok-count">0</span>
+          <span>✅ 正解</span>
+        </div>
+        <div class="score-item">
+          <span class="ng-score" id="ng-count">0</span>
+          <span>❌ 不正解</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- タイマー -->
+    <div class="timer-box">
+      <span class="timer-label">残り時間</span>
+      <div id="countdown-display">—</div>
+    </div>
+
+    <div id="feedback-text"></div>
+
+    <!-- コントロール -->
+    <div class="ctrl-btns">
+      <button class="ctrl-btn btn-start" id="btn-start" onclick="startQuiz()">▶ START</button>
+      <button class="ctrl-btn btn-skip"  id="btn-skip"  onclick="skipNote()" disabled>⏭ 中断</button>
+      <button class="ctrl-btn btn-stop"  id="btn-stop"  onclick="stopQuiz()" disabled>⏹ STOP</button>
+    </div>
+  </div>
+</div>
+
+<!-- 回答ボタン -->
+<div class="answer-section">
+  <h2>音名を選んでください</h2>
+  <div class="note-grid" id="note-grid"></div>
+</div>
+
+<!-- 結果モーダル -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2>🎷 練習完了！</h2>
+    <div class="rate-display" id="modal-rate">—%</div>
+    <div class="modal-stat"><span>出題数</span><span class="modal-val" id="modal-total">—</span></div>
+    <div class="modal-stat"><span>✅ 正解</span><span class="modal-val ok-score" id="modal-ok">—</span></div>
+    <div class="modal-stat"><span>❌ 不正解</span><span class="modal-val ng-score" id="modal-ng">—</span></div>
+    <button class="modal-close-btn" onclick="closeModal()">CLOSE</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// レベル1：ナチュラルのみ（#♭なし）
+// key: [ド数字ラベル, 五線上の位置 (C4=0基準 半音単位ではなく音名stepで)]
+// ============================================================
+
+// 五線の音階ステップ（C4=0, D4=1, E4=2... ）
+const NOTE_STEPS = {
+  "B3": -1,
+  "C4": 0,"D4":1,"E4":2,"F4":3,"G4":4,"A4":5,"B4":6,
+  "C5": 7,"D5":8,"E5":9,"F5":10,"G5":11,"A5":12,"B5":13,
+  "C6":14,"D6":15,"E6":16,"F6":17,
+};
+
+const NOTE_LABELS = {
+  "B3":"シ₃","C4":"ド₄","D4":"レ₄","E4":"ミ₄","F4":"ファ₄","G4":"ソ₄","A4":"ラ₄","B4":"シ₄",
+  "C5":"ド₅","D5":"レ₅","E5":"ミ₅","F5":"ファ₅","G5":"ソ₅","A5":"ラ₅","B5":"シ₅",
+  "C6":"ド₆","D6":"レ₆","E6":"ミ₆","F6":"ファ₆",
+};
+
+const LEVEL1_KEYS = Object.keys(NOTE_STEPS);
+
+// ---- 五線・音符SVG描画 ----
+// 五線: 中央はB4(step=6)をミドルラインに設定
+// 1 step = 10px (半音でなく音名step)
+// 五線: step 2,4,6,8,10 に相当する位置に線を引く
+
+function drawStaff(key) {
+  const svg = document.getElementById('staff-svg');
+  svg.innerHTML = '';
+
+  const W = 440, H = 220;
+  const lineSpacing = 16; // 五線の間隔px
+  const staffTop = 70;    // 最上線のY
+  // 五線: 5本、間隔lineSpacing
+  // ト音記号の五線: 下から E4,G4,B4,D5,F5 (各step 2,4,6,8,10)
+  // stepからY: Y = staffTop + (10 - step) * (lineSpacing/2)
+  // → step=10(F5) が最上線、step=2(E4)が最下線
+
+  const stepToY = s => staffTop + (10 - s) * (lineSpacing / 2);
+
+  // 補助線の範囲チェック
+  const step = NOTE_STEPS[key];
+  const noteY = stepToY(step);
+  const noteX = 280;
+  const r = 9; // 音符頭の半径
+
+  // 加線計算
+  function drawLedgers(g) {
+    // 加線（上）: step > 10 → step=12,14,...
+    for (let s = 12; s <= step; s += 2) {
+      const ly = stepToY(s);
+      const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+      line.setAttribute('x1', noteX - 14); line.setAttribute('x2', noteX + 14);
+      line.setAttribute('y1', ly); line.setAttribute('y2', ly);
+      line.setAttribute('stroke', '#8b949e'); line.setAttribute('stroke-width', '1.5');
+      g.appendChild(line);
+    }
+    // 加線（下）: step < 2 → step=0,-2,...
+    for (let s = 0; s >= step; s -= 2) {
+      const ly = stepToY(s);
+      const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+      line.setAttribute('x1', noteX - 14); line.setAttribute('x2', noteX + 14);
+      line.setAttribute('y1', ly); line.setAttribute('y2', ly);
+      line.setAttribute('stroke', '#8b949e'); line.setAttribute('stroke-width', '1.5');
+      g.appendChild(line);
+    }
+  }
+
+  const g = document.createElementNS('http://www.w3.org/2000/svg','g');
+
+  // 五線（step 2,4,6,8,10）
+  [2,4,6,8,10].forEach(s => {
+    const y = stepToY(s);
+    const line = document.createElementNS('http://www.w3.org/2000/svg','line');
+    line.setAttribute('x1','60'); line.setAttribute('x2', String(W-20));
+    line.setAttribute('y1', y); line.setAttribute('y2', y);
+    line.setAttribute('stroke','#8b949e'); line.setAttribute('stroke-width','1.5');
+    g.appendChild(line);
+  });
+
+  // 縦線（左端）
+  const vl = document.createElementNS('http://www.w3.org/2000/svg','line');
+  vl.setAttribute('x1','60'); vl.setAttribute('x2','60');
+  vl.setAttribute('y1', stepToY(10)); vl.setAttribute('y2', stepToY(2));
+  vl.setAttribute('stroke','#8b949e'); vl.setAttribute('stroke-width','2');
+  g.appendChild(vl);
+
+  // ト音記号（テキスト絵文字風）
+  const clef = document.createElementNS('http://www.w3.org/2000/svg','text');
+  clef.setAttribute('x','70'); clef.setAttribute('y', String(stepToY(2)+4));
+  clef.setAttribute('font-size','72'); clef.setAttribute('fill','#8b949e');
+  clef.setAttribute('font-family','serif');
+  clef.textContent = '𝄞';
+  g.appendChild(clef);
+
+  // 加線
+  drawLedgers(g);
+
+  // 音符：楕円頭
+  const ellipse = document.createElementNS('http://www.w3.org/2000/svg','ellipse');
+  ellipse.setAttribute('cx', String(noteX));
+  ellipse.setAttribute('cy', String(noteY));
+  ellipse.setAttribute('rx', String(r));
+  ellipse.setAttribute('ry', String(r * 0.72));
+  ellipse.setAttribute('transform', `rotate(-15, ${noteX}, ${noteY})`);
+  ellipse.setAttribute('fill', '#e6edf3');
+  g.appendChild(ellipse);
+
+  // 符幹（stem）: step <= 6 は上向き、step > 6 は下向き
+  const stemLen = 56;
+  const stem = document.createElementNS('http://www.w3.org/2000/svg','line');
+  if (step <= 6) {
+    stem.setAttribute('x1', String(noteX + r - 1)); stem.setAttribute('x2', String(noteX + r - 1));
+    stem.setAttribute('y1', String(noteY)); stem.setAttribute('y2', String(noteY - stemLen));
+  } else {
+    stem.setAttribute('x1', String(noteX - r + 1)); stem.setAttribute('x2', String(noteX - r + 1));
+    stem.setAttribute('y1', String(noteY)); stem.setAttribute('y2', String(noteY + stemLen));
+  }
+  stem.setAttribute('stroke','#e6edf3'); stem.setAttribute('stroke-width','2');
+  g.appendChild(stem);
+
+  svg.appendChild(g);
+}
+
+function clearStaff(msg='') {
+  const svg = document.getElementById('staff-svg');
+  svg.innerHTML = '';
+  if (msg) {
+    const t = document.createElementNS('http://www.w3.org/2000/svg','text');
+    t.setAttribute('x','220'); t.setAttribute('y','120');
+    t.setAttribute('text-anchor','middle');
+    t.setAttribute('fill','#8b949e');
+    t.setAttribute('font-family','Noto Sans JP'); t.setAttribute('font-size','16');
+    t.textContent = msg;
+    svg.appendChild(t);
+  }
+}
+
+// ============================================================
+// クイズロジック
+// ============================================================
+let state = {
+  running: false,
+  answered: false,
+  noteList: [],
+  currentIdx: 0,
+  totalCount: 0,
+  currentNote: null,
+  score: {ok:0, ng:0},
+  timerId: null,
+  countdownId: null,
+  remaining: 0,
+};
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}
+  return a;
+}
+
+function buildNoteList(total) {
+  const keys = LEVEL1_KEYS.slice();
+  let list = [];
+  while (list.length < total) {
+    const s = shuffle(keys);
+    if (list.length > 0 && s[0] === list[list.length-1] && s.length > 1) {
+      [s[0],s[1]]=[s[1],s[0]];
+    }
+    list = list.concat(s);
+  }
+  return list.slice(0, total);
+}
+
+// ---- 回答ボタン構築 ----
+function buildAnswerButtons() {
+  const grid = document.getElementById('note-grid');
+  grid.innerHTML = '';
+  LEVEL1_KEYS.forEach(key => {
+    const btn = document.createElement('button');
+    btn.className = 'note-btn';
+    btn.id = 'btn-note-' + key.replace(/[#♭]/g,'_');
+    btn.textContent = NOTE_LABELS[key];
+    btn.disabled = true;
+    btn.onclick = () => onAnswer(key);
+    grid.appendChild(btn);
+  });
+}
+
+function getBtnEl(key) {
+  return document.getElementById('btn-note-' + key.replace(/[#♭]/g,'_'));
+}
+
+function setAllBtns(enabled) {
+  LEVEL1_KEYS.forEach(k => {
+    const b = getBtnEl(k);
+    if(b) { b.disabled = !enabled; b.className='note-btn'; }
+  });
+}
+
+// ---- UI更新ヘルパー ----
+function updateProgress() {
+  const done = state.currentIdx;
+  const total = state.totalCount;
+  const pct = total > 0 ? Math.round(done/total*100) : 0;
+  document.getElementById('progress-text').textContent = `${done} / ${total}`;
+  document.getElementById('progress-pct').textContent = `${pct}%`;
+  document.getElementById('progress-bar').style.width = pct + '%';
+}
+
+function updateScore() {
+  document.getElementById('ok-count').textContent = state.score.ok;
+  document.getElementById('ng-count').textContent = state.score.ng;
+}
+
+function setFeedback(text, color='') {
+  const el = document.getElementById('feedback-text');
+  el.textContent = text;
+  el.style.color = color || 'var(--muted)';
+}
+
+function setCountdown(sec) {
+  const el = document.getElementById('countdown-display');
+  el.textContent = sec === null ? '—' : String(sec);
+  el.classList.toggle('urgent', sec !== null && sec <= 2);
+}
+
+function setPanelState(state_) {
+  const p = document.getElementById('score-panel');
+  p.classList.remove('ok','ng');
+  if (state_) p.classList.add(state_);
+}
+
+// ---- タイマー ----
+function startTimer(sec) {
+  clearTimers();
+  state.remaining = sec;
+  setCountdown(sec);
+  state.countdownId = setInterval(() => {
+    state.remaining--;
+    setCountdown(state.remaining);
+    if (state.remaining <= 0) {
+      clearTimers();
+      onTimeout();
+    }
+  }, 1000);
+}
+
+function clearTimers() {
+  clearInterval(state.countdownId);
+  clearTimeout(state.timerId);
+  state.countdownId = null;
+  state.timerId = null;
+}
+
+// ---- START ----
+function startQuiz() {
+  const total = parseInt(document.getElementById('count-input').value) || 10;
+  const time  = parseInt(document.getElementById('time-input').value)  || 5;
+
+  state.totalCount = total;
+  state.noteList   = buildNoteList(total);
+  state.currentIdx = 0;
+  state.score      = {ok:0, ng:0};
+  state.running    = true;
+  state.timeLimit  = time;
+
+  document.getElementById('btn-start').disabled = true;
+  document.getElementById('btn-skip').disabled  = false;
+  document.getElementById('btn-stop').disabled  = false;
+  document.getElementById('count-input').disabled = true;
+  document.getElementById('time-input').disabled  = true;
+
+  updateScore();
+  updateProgress();
+  setFeedback('');
+  nextNote();
+}
+
+// ---- 次の問題 ----
+function nextNote() {
+  if (!state.running || state.currentIdx >= state.totalCount) {
+    onFinished(); return;
+  }
+  state.answered = false;
+  state.currentNote = state.noteList[state.currentIdx];
+  state.currentIdx++;
+
+  setPanelState(null);
+  drawStaff(state.currentNote);
+  document.getElementById('question-label').textContent =
+    `問題 ${state.currentIdx} / ${state.totalCount}`;
+
+  setAllBtns(true);
+  setFeedback('');
+  updateProgress();
+  startTimer(state.timeLimit);
+}
+
+// ---- 回答 ----
+function onAnswer(chosenKey) {
+  if (!state.running || state.answered) return;
+  state.answered = true;
+  clearTimers();
+  setAllBtns(false);
+
+  const correct = state.currentNote;
+  const isOk = chosenKey === correct;
+
+  if (isOk) {
+    state.score.ok++;
+    setPanelState('ok');
+    getBtnEl(correct).classList.add('correct');
+    setFeedback('✅ 正解！', 'var(--green)');
+    setCountdown('✅');
+  } else {
+    state.score.ng++;
+    setPanelState('ng');
+    getBtnEl(chosenKey).classList.add('wrong');
+    getBtnEl(correct).classList.add('correct');
+    setFeedback(`❌ 正解：${NOTE_LABELS[correct]}`, 'var(--red)');
+    setCountdown('❌');
+  }
+  updateScore();
+  document.getElementById('countdown-display').classList.remove('urgent');
+  setTimeout(nextNote, 1500);
+}
+
+// ---- タイムアウト ----
+function onTimeout() {
+  if (!state.running || state.answered) return;
+  state.answered = true;
+  setAllBtns(false);
+  state.score.ng++;
+  setPanelState('ng');
+  getBtnEl(state.currentNote).classList.add('correct');
+  setFeedback(`⏱ 時間切れ！正解：${NOTE_LABELS[state.currentNote]}`, 'var(--red)');
+  setCountdown(0);
+  updateScore();
+  setTimeout(nextNote, 1800);
+}
+
+// ---- 中断（スキップ）----
+function skipNote() {
+  if (!state.running || state.answered) return;
+  state.answered = true;
+  clearTimers();
+  setAllBtns(false);
+  state.score.ng++;
+  setPanelState('ng');
+  getBtnEl(state.currentNote).classList.add('correct');
+  setFeedback(`⏭ スキップ 正解：${NOTE_LABELS[state.currentNote]}`, 'var(--accent)');
+  setCountdown('⏭');
+  document.getElementById('countdown-display').classList.remove('urgent');
+  updateScore();
+  setTimeout(nextNote, 1500);
+}
+
+// ---- STOP ----
+function stopQuiz() {
+  clearTimers();
+  state.running = false;
+  setAllBtns(false);
+  onFinished(true);
+}
+
+// ---- 終了 ----
+function onFinished(stopped=false) {
+  clearTimers();
+  state.running = false;
+  document.getElementById('btn-start').disabled = false;
+  document.getElementById('btn-skip').disabled  = true;
+  document.getElementById('btn-stop').disabled  = true;
+  document.getElementById('count-input').disabled = false;
+  document.getElementById('time-input').disabled  = false;
+  setAllBtns(false);
+  clearStaff(stopped ? '⏹ 停止しました' : '✅ 練習完了！');
+  setPanelState(null);
+  setCountdown(null);
+  document.getElementById('question-label').textContent = stopped ? '停止' : '完了';
+
+  if (!stopped && state.totalCount > 0) {
+    showModal();
+  }
+}
+
+// ---- モーダル ----
+function showModal() {
+  const total = state.score.ok + state.score.ng;
+  const rate  = total > 0 ? (state.score.ok / total * 100).toFixed(1) : '0.0';
+  document.getElementById('modal-rate').textContent  = rate + '%';
+  document.getElementById('modal-total').textContent = total + ' 問';
+  document.getElementById('modal-ok').textContent    = state.score.ok + ' 問';
+  document.getElementById('modal-ng').textContent    = state.score.ng + ' 問';
+  document.getElementById('modal').classList.add('show');
+}
+
+function closeModal() {
+  document.getElementById('modal').classList.remove('show');
+  clearStaff('START を押してください');
+  setFeedback('');
+  updateProgress();
+  updateScore();
+}
+
+// ---- 初期化 ----
+buildAnswerButtons();
+clearStaff('START を押してください');
+updateProgress();
+</script>
+<script>
+// PWA: Service Worker 登録
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('SW registered:', reg.scope))
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}
+// iOS Safari: スタンドアロン表示のセーフエリア対応
+document.documentElement.style.setProperty('--sat', 'env(safe-area-inset-top)');
+document.documentElement.style.setProperty('--sab', 'env(safe-area-inset-bottom)');
+</script>
+</body>
+</html>
