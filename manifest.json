@@ -1,0 +1,25 @@
+{
+  "name": "アルトサックス 音符クイズ Lv.1",
+  "short_name": "SaxQuiz",
+  "description": "アルトサックス奏者のための音符読み練習アプリ",
+  "start_url": "./sax_quiz_level1_pwa.html",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0d1117",
+  "theme_color": "#f0a500",
+  "lang": "ja",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
