@@ -450,7 +450,7 @@
   <!-- 右パネル -->
   <div class="right-panel">
     <!-- 設定 -->
-    <div class="config-box">
+    <div class="config-box" id="config-box">
       <h2>設定</h2>
       <div class="config-row">
         <label>出題回数</label>
@@ -469,7 +469,7 @@
     </div>
 
     <!-- 進捗・スコア -->
-    <div class="stats-box">
+    <div class="stats-box" id="stats-box">
       <div class="progress-row">
         <span id="progress-text">0 / 0</span>
         <span id="progress-pct">0%</span>
@@ -800,6 +800,11 @@ function startQuiz() {
   updateScore();
   updateProgress();
   setFeedback('');
+
+  // クイズ中は設定・進捗を非表示
+  document.getElementById('config-box').style.display = 'none';
+  document.getElementById('stats-box').style.display  = 'none';
+
   nextNote();
 }
 
@@ -904,6 +909,10 @@ function onFinished(stopped=false) {
   setPanelState(null);
   setCountdown(null);
   document.getElementById('question-label').textContent = stopped ? '停止' : '完了';
+
+  // 設定・進捗を再表示
+  document.getElementById('config-box').style.display = '';
+  document.getElementById('stats-box').style.display  = '';
 
   if (!stopped && state.totalCount > 0) {
     showModal();
