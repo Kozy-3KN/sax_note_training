@@ -278,7 +278,17 @@
     letter-spacing: 2px;
     min-width: 50px;
     text-align: right;
-    transition: color 0.3s;
+    transition: color 0.3s, font-size 0.3s;
+  }
+  .timer-box.quiz-mode {
+    padding: 5px 12px;
+  }
+  .timer-box.quiz-mode .timer-label {
+    font-size: 0.65rem;
+  }
+  .timer-box.quiz-mode #countdown-display {
+    font-size: 1.3rem;
+    min-width: 30px;
   }
   #countdown-display.urgent {
     color: var(--red);
@@ -445,8 +455,7 @@
 <body>
 
 <header>
-  <h1>🎷 Alto Sax 音符クイズ</h1>
-  <span class="lv-badge">LV.1 ♮ナチュラルのみ</span>
+  <h1>🎷 音符テスト</h1>
 </header>
 
 <div class="main-grid">
@@ -787,7 +796,8 @@ function setCountdown(sec) {
   }
   popNum.textContent = String(sec);
   popNum.classList.toggle('urgent', sec <= 2);
-  popup.style.display = 'flex';
+  // 残り3秒以下のみポップアップ表示
+  popup.style.display = (sec <= 3) ? 'flex' : 'none';
 }
 
 function hideTimerPopup() {
@@ -844,6 +854,8 @@ function startQuiz() {
   updateProgress();
   setFeedback('');
 
+  // クイズ中はtimer-boxを小さく
+  document.querySelector('.timer-box').classList.add('quiz-mode');
   // クイズ中は設定・進捗・通常操作ボタンを非表示
   document.getElementById('config-box').style.display   = 'none';
   document.getElementById('stats-box').style.display    = 'none';
@@ -957,6 +969,8 @@ function onFinished(stopped=false) {
   setCountdown(null);
   document.getElementById('question-label').textContent = stopped ? '停止' : '完了';
 
+  // timer-boxを元のサイズに戻す
+  document.querySelector('.timer-box').classList.remove('quiz-mode');
   // 設定・進捗・通常操作ボタンを再表示
   document.getElementById('config-box').style.display   = '';
   document.getElementById('stats-box').style.display    = '';
@@ -994,12 +1008,12 @@ clearStaff('START を押してください');
 updateProgress();
 </script>
 <script>
-// PWA: Service Worker 登録
-if ('serviceWorker' in navigator) {
+// PWA: Service Worker 登録（GitHub Pages対応）
+if ('serviceWorker' in navigator && location.protocol === 'https:') {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('./sw.js')
       .then(reg => console.log('SW registered:', reg.scope))
-      .catch(err => console.warn('SW registration failed:', err));
+      .catch(err => console.info('SW skipped:', err.message));
   });
 }
 // iOS Safari: スタンドアロン表示のセーフエリア対応
