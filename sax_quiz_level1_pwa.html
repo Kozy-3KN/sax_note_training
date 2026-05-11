@@ -774,26 +774,29 @@ function setFeedback(text, color='') {
 }
 
 function setCountdown(sec) {
-  // 既存のtimer-box表示（非表示中でも値は更新）
+  // timer-box の表示更新
   const el = document.getElementById('countdown-display');
   el.textContent = sec === null ? '—' : String(sec);
   el.classList.toggle('urgent', sec !== null && sec <= 2);
 
-  // タイマーポップアップ
+  // ポップアップ
+  showTimerPopup(sec);
+}
+
+function showTimerPopup(sec) {
   const popup = document.getElementById('timer-popup');
   const popNum = document.getElementById('timer-popup-num');
-  if (!state.running || sec === null || typeof sec !== 'number') {
-    popup.style.display = 'none';
+  if (sec === null || typeof sec !== 'number' || sec > 3) {
+    popup.classList.remove('visible');
     return;
   }
   popNum.textContent = String(sec);
   popNum.classList.toggle('urgent', sec <= 2);
-  // 残り3秒以下のみポップアップ表示
-  popup.style.display = (sec <= 3) ? 'flex' : 'none';
+  popup.classList.add('visible');
 }
 
 function hideTimerPopup() {
-  document.getElementById('timer-popup').style.display = 'none';
+  document.getElementById('timer-popup').classList.remove('visible');
 }
 
 function setPanelState(state_) {
