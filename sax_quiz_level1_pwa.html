@@ -787,16 +787,16 @@ function showTimerPopup(sec) {
   const popup = document.getElementById('timer-popup');
   const popNum = document.getElementById('timer-popup-num');
   if (sec === null || typeof sec !== 'number' || sec > 3) {
-    popup.classList.remove('visible');
+    popup.style.display = 'none';
     return;
   }
   popNum.textContent = String(sec);
-  popNum.classList.toggle('urgent', sec <= 2);
-  popup.classList.add('visible');
+  popNum.style.color = (sec <= 2) ? '#e05252' : '#f0a500';
+  popup.style.display = 'flex';
 }
 
 function hideTimerPopup() {
-  document.getElementById('timer-popup').classList.remove('visible');
+  document.getElementById('timer-popup').style.display = 'none';
 }
 
 function setPanelState(state_) {
@@ -1013,11 +1013,11 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
 document.documentElement.style.setProperty('--sat', 'env(safe-area-inset-top)');
 document.documentElement.style.setProperty('--sab', 'env(safe-area-inset-bottom)');
 </script>
-<!-- タイマーポップアップ（body直下で確実にfixed） -->
-<div class="timer-popup" id="timer-popup" style="display:none;">
-  <div class="timer-popup-inner">
-    <div class="timer-popup-label">残り時間</div>
-    <div class="timer-popup-num" id="timer-popup-num">5</div>
+<!-- タイマーポップアップ -->
+<div id="timer-popup" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; z-index:9999; pointer-events:none; align-items:center; justify-content:center;">
+  <div style="background:rgba(13,17,23,0.95); border:3px solid #f0a500; border-radius:24px; padding:40px 64px; text-align:center; box-shadow:0 0 60px rgba(240,165,0,0.4);">
+    <div style="font-size:0.85rem; color:#8b949e; letter-spacing:4px; margin-bottom:8px;">残り時間</div>
+    <div id="timer-popup-num" style="font-family:'Bebas Neue',sans-serif; font-size:8rem; color:#f0a500; line-height:1;">5</div>
   </div>
 </div>
 </body>
