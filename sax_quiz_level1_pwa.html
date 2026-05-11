@@ -512,7 +512,7 @@
     </div>
 
     <!-- タイマー -->
-    <div class="timer-box">
+    <div class="timer-box" id="timer-box">
       <span class="timer-label">残り時間</span>
       <div id="countdown-display">—</div>
     </div>
@@ -538,14 +538,6 @@
 <div class="quiz-ctrl-bar" id="quiz-ctrl-bar" style="display:none;">
   <button class="ctrl-btn btn-skip" id="btn-skip2" onclick="skipNote()">⏭ 中断</button>
   <button class="ctrl-btn btn-stop" id="btn-stop2" onclick="stopQuiz()">⏹ STOP</button>
-</div>
-
-<!-- タイマーポップアップ -->
-<div class="timer-popup" id="timer-popup" style="display:none;">
-  <div class="timer-popup-inner">
-    <div class="timer-popup-label">残り時間</div>
-    <div class="timer-popup-num" id="timer-popup-num">5</div>
-  </div>
 </div>
 
 <!-- 結果モーダル -->
@@ -854,8 +846,7 @@ function startQuiz() {
   updateProgress();
   setFeedback('');
 
-  // クイズ中はtimer-boxを小さく
-  document.querySelector('.timer-box').classList.add('quiz-mode');
+  // timer-boxはそのまま表示
   // クイズ中は設定・進捗・通常操作ボタンを非表示
   document.getElementById('config-box').style.display   = 'none';
   document.getElementById('stats-box').style.display    = 'none';
@@ -969,8 +960,7 @@ function onFinished(stopped=false) {
   setCountdown(null);
   document.getElementById('question-label').textContent = stopped ? '停止' : '完了';
 
-  // timer-boxを元のサイズに戻す
-  document.querySelector('.timer-box').classList.remove('quiz-mode');
+  // timer-boxはそのまま
   // 設定・進捗・通常操作ボタンを再表示
   document.getElementById('config-box').style.display   = '';
   document.getElementById('stats-box').style.display    = '';
@@ -1020,5 +1010,12 @@ if ('serviceWorker' in navigator && location.protocol === 'https:') {
 document.documentElement.style.setProperty('--sat', 'env(safe-area-inset-top)');
 document.documentElement.style.setProperty('--sab', 'env(safe-area-inset-bottom)');
 </script>
+<!-- タイマーポップアップ（body直下で確実にfixed） -->
+<div class="timer-popup" id="timer-popup" style="display:none;">
+  <div class="timer-popup-inner">
+    <div class="timer-popup-label">残り時間</div>
+    <div class="timer-popup-num" id="timer-popup-num">5</div>
+  </div>
+</div>
 </body>
 </html>
